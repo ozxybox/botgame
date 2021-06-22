@@ -31,11 +31,12 @@ private:
 
 class IEntityFactory;
 
+// This is not a singleton! It needs to exist forever!
 class CEntityManager
 {
 public:
 	void RegisterFactory(IEntityFactory* factory);
-	CBaseEntity* CreateEntity(char* name);
+	CBaseEntity* CreateEntity(const char* name);
 	CBaseEntity* GetEnt(const char* name);
 	void Update();
 	void Render();
@@ -71,4 +72,4 @@ public:
 	const char* m_name;
 };
 
-#define DECLARE_ENT(classname, cppname) static CEntityFactory<cppname> s_factory##cppname##classname(#classname); 
+#define DECLARE_ENT(cppname, classname) static CEntityFactory<cppname> s_factory##cppname##classname(#classname); 

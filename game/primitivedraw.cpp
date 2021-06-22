@@ -1,5 +1,6 @@
 #include "primitivedraw.h"
 #include <glad/include/glad/glad.h>
+#include <renderer.h>
 
 static glm::vec3 s_cubeVbo[] =
 {
@@ -44,7 +45,7 @@ DEFINE_SINGLETON(PrimitiveDraw);
 
 CPrimitiveDraw::CPrimitiveDraw()
 {
-	s_singleton = this;
+	m_cubeShader = ShaderManager().GetProgram("cube.vs", "cube.fs");
 
 	glGenVertexArrays(1, &m_cubeVAO);
 	glBindVertexArray(m_cubeVAO);
@@ -68,6 +69,14 @@ CPrimitiveDraw::~CPrimitiveDraw()
 
 void CPrimitiveDraw::DrawCube(CTransform& transform)
 {
+	DrawCube(transform, m_cubeShader);
+}
+
+void CPrimitiveDraw::DrawCube(CTransform& transform, shader_t shader)
+{
+	Renderer().SetMatrix(MatrixMode::MODEL, transform.Matrix());
+	Renderer().BindShader(shader);
+
 	// 1rst attribute buffer : vertices
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, m_cubeVBO);
@@ -84,4 +93,5 @@ void CPrimitiveDraw::DrawCube(CTransform& transform)
 	glDrawElements(GL_TRIANGLES, sizeof(s_cubeIbo) / (sizeof(int)), GL_UNSIGNED_INT, 0);
 
 	glDisableVertexAttribArray(0);
+
 }

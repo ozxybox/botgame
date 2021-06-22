@@ -33,7 +33,7 @@ void CEntityManager::RegisterFactory(IEntityFactory* factory)
 	m_factories.insert({ std::string(factory->ClassName()), factory });
 }
 
-CBaseEntity* CEntityManager::CreateEntity(char* name)
+CBaseEntity* CEntityManager::CreateEntity(const char* name)
 {
 	if (m_factories.find(std::string(name)) == m_factories.end())
 		return 0;

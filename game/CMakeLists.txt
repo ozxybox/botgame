@@ -37,7 +37,7 @@ set( SHADERS
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 add_executable( game ${SOURCES} ${SHADERS} )
 target_include_directories( game PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries( game SDL2 glad glm )
+target_link_libraries( game SDL2 glad glm lodepng imgui )
 set_target_properties( game PROPERTIES
 	VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
 )

@@ -28,7 +28,7 @@ public:
 
 	// Absolute position in the world
 	void SetAbsAngles(glm::vec3 ang);
-	void SetAbsAngles(float pitch, float yaw, float roll) { SetAbsOrigin({ pitch, yaw, roll }); }
+	void SetAbsAngles(float pitch, float yaw, float roll) { SetAbsAngles({ pitch, yaw, roll }); }
 	void SetAbsOrigin(glm::vec3 pos);
 	void SetAbsOrigin(float x, float y, float z) { SetAbsOrigin({ x, y, z }); }
 	void SetAbsScale(glm::vec3 scale);

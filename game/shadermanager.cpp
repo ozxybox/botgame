@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <cstdlib>
 #include "log.h"
+#include <renderer.h>
 
 DEFINE_SINGLETON(ShaderManager);
 
@@ -10,7 +11,7 @@ DEFINE_SINGLETON(ShaderManager);
 void loadShader(const char* path, GLuint shaderID)
 {
 	// Read File
-	FILE* f = fopen(path, "rb");
+	FILE* f = fopen(path, "r");
 	if (!f)
 	{
 		Log::Fault("Failed to load shader %s\n", path);
@@ -19,7 +20,7 @@ void loadShader(const char* path, GLuint shaderID)
 	fseek(f, 0, SEEK_END);
 	size_t len = ftell(f);
 	fseek(f, 0, SEEK_SET);
-	char* str = (char*)malloc(len);
+	char* str = (char*)calloc(len,1);
 	fread(str, 1, len, f);
 
 	// Pass it into gl
@@ -33,9 +34,8 @@ void loadShader(const char* path, GLuint shaderID)
 	if (size > 0) {
 		char* log = (char*)malloc(size);
 		glGetShaderInfoLog(shaderID, size, NULL, log);
-		Log::Fault("%s\n", log);
+		Log::Fault("%s\n--File--\n%s\n", log,str);
 		free(log);
-	
 	}
 	else
 	{
@@ -49,16 +49,23 @@ void loadShader(const char* path, GLuint shaderID)
 
 CShaderManager::CShaderManager()
 {
-	s_singleton = this;
 }
 
 CShaderManager::~CShaderManager()
 {
-	s_singleton = nullptr;
+	for(auto p : m_programs)
+		glDeleteProgram(p.second);
+
+	for (auto p : m_shaders)
+		glDeleteShader(p.second);
 }
 
 shader_t CShaderManager::GetProgram(const char* vertex, const char* fragment)
 {
+	std::string programName = std::string(vertex) + std::string(fragment);
+	if (m_programs.contains(programName))
+		return m_programs[programName];
+
 	shader_t vs = GetShader(vertex, GL_VERTEX_SHADER);
 	shader_t fs = GetShader(fragment, GL_FRAGMENT_SHADER);
 
@@ -67,6 +74,7 @@ shader_t CShaderManager::GetProgram(const char* vertex, const char* fragment)
 	glAttachShader(program, fs);
 	glLinkProgram(program);
 
+	m_programs.emplace(programName, program);
 	return program;
 }
 
@@ -84,8 +92,4 @@ shader_t CShaderManager::GetShader(const char* path, unsigned int type)
 	}
 
 	return shader;
-}
-
-void CShaderManager::BindShader(shader_t shader)
-{
 }

@@ -12,12 +12,14 @@
 	C##classname& classname();
 
 #define DEFINE_SINGLETON(classname) \
-	C##classname* C##classname::s_singleton = nullptr; \
+	C##classname* IBaseSingleton<C##classname>::s_singleton = nullptr; \
 	C##classname& classname() { return *(C##classname*)C##classname::s_singleton; } 
 
+/*
 #define SINGLETON_CLASS(classname)       \
 	DECLARE_SINGLETON_ACCESSOR(classname);   \
 	class C##classname : public IBaseSingleton<C##classname>
+*/
 
 
 class IBaseSystem

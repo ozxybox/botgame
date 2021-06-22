@@ -7,9 +7,12 @@ project( game )
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
 add_subdirectory( thirdparty/SDL2 )
 add_subdirectory( thirdparty/glm )
 add_subdirectory( thirdparty/glad )
+add_subdirectory( thirdparty/lodepng.cmake )
+add_subdirectory( thirdparty/imgui.cmake )
 
 include_directories( thirdparty )
 add_subdirectory( game )
