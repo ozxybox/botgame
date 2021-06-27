@@ -4,6 +4,7 @@
 #include "shadermanager.h"
 
 #include <glm/mat4x4.hpp>
+#include <textures.h>
 
 enum class MatrixMode
 {
@@ -25,11 +26,14 @@ public:
 
 
 	void SetPerspective(float fov);
-	void SetOrtho();
+	void SetOrtho(float l, float r, float t, float b);
 
 	void SetMatrix(MatrixMode mode, glm::mat4x4 mat);
 
 	void BindShader(shader_t shader);
+	void BindTexture(texture_t texture);
+
+	void GetWindowSize(int& w, int& h);
 
 private:
 	void* m_window;

@@ -11,8 +11,6 @@ DEFINE_SINGLETON(Renderer);
 
 
 
-
-
 SDL_Window* initWindow()
 {
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
@@ -60,9 +58,9 @@ CRenderer::CRenderer()
 	Log::Msg("Made the window\n");
 
 	// Enable depth test
-	//glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
 	// Accept fragment if it closer to the camera than the former one
-	//glDepthFunc(GL_LESS);
+	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
 }
 
@@ -73,12 +71,14 @@ CRenderer::~CRenderer()
 void CRenderer::ClearFrame(glm::vec3 color)
 {
 	glClearColor(color.r, color.g, color.b, 1.f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void CRenderer::PushFrame()
 {
 	SDL_GL_SwapWindow((SDL_Window*)m_window);
+
+
 }
 
 void CRenderer::SetPerspective(float fov)
@@ -88,8 +88,9 @@ void CRenderer::SetPerspective(float fov)
 	m_projection = glm::perspective(fov, w / (float)h, 0.1f, 100.0f);
 }
 
-void CRenderer::SetOrtho()
+void CRenderer::SetOrtho(float l, float r, float t, float b)
 {
+	m_projection = glm::ortho(l, r, b, t);
 }
 
 void CRenderer::SetMatrix(MatrixMode mode, glm::mat4x4 mat)
@@ -120,4 +121,23 @@ void CRenderer::BindShader(shader_t shader)
 	glm::mat4x4 mvp = m_projection * m_view * m_model;
 	GLuint mvpUniform = glGetUniformLocation(shader, "u_mvp");
 	glUniformMatrix4fv(mvpUniform, 1, GL_FALSE, &mvp[0][0]);
+	
+}
+
+void CRenderer::BindTexture(texture_t texture)
+{
+	glBindTexture(GL_TEXTURE_2D, texture);
+}
+
+void CRenderer::GetWindowSize(int& w, int& h)
+{
+	if (SDL_GetWindowFlags((SDL_Window*)m_window) & SDL_WINDOW_MINIMIZED)
+	{
+		w = 0;
+		h = 0;
+	}
+	else
+	{
+		SDL_GetWindowSize((SDL_Window*)m_window, &w, &h);
+	}
 }

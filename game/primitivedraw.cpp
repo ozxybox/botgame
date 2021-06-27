@@ -2,43 +2,77 @@
 #include <glad/include/glad/glad.h>
 #include <renderer.h>
 
-static glm::vec3 s_cubeVbo[] =
+struct vertex_t
 {
-	{-1,-1,-1},
-	{ 1,-1,-1},
-	{ 1, 1,-1},
-	{ 1, 1, 1},
-	{-1, 1, 1},
-	{-1,-1, 1},
-	{-1, 1,-1},
-	{ 1,-1, 1},
+	glm::vec3 pos;
+	glm::vec2 uv;
 };
 
-static unsigned int s_cubeIbo[] =
+static vertex_t s_cubeVbo[] =
 {
-	// Back face
-	2,1,0,
-	0,6,2,
-
-	// Front face
-	3,4,5,
-	5,7,3,
-
 	// Top face
-	4,3,2,
-	2,6,4,
+	{{ 1, 1,-1}, {1,0}},
+	{{-1, 1,-1}, {0,0}},
+	{{-1, 1, 1}, {0,1}},
+	{{ 1, 1, 1}, {1,1}},
 
 	// Bottom face
-	0,1,7,
-	7,5,0,
+	{{-1,-1,-1}, {1,0}},
+	{{ 1,-1,-1}, {0,0}},
+	{{ 1,-1, 1}, {0,1}},
+	{{-1,-1, 1}, {1,1}},
+
+	// Front face
+	{{ 1, 1, 1}, {1,0}},
+	{{-1, 1, 1}, {0,0}},
+	{{-1,-1, 1}, {0,1}},
+	{{ 1,-1, 1}, {1,1}},
+
+	// Back face
+	{{-1, 1,-1}, {1,0}},
+	{{ 1, 1,-1}, {0,0}},
+	{{ 1,-1,-1}, {0,1}},
+	{{-1,-1,-1}, {1,1}},
 
 	// Left face
-	5,6,0,
-	5,4,6,
+	{{-1, 1, 1}, {1,0}},
+	{{-1, 1,-1}, {0,0}},
+	{{-1,-1,-1}, {0,1}},
+	{{-1,-1, 1}, {1,1}},
+
 
 	// Right face
-	1,2,3,
-	3,7,1,
+	{{ 1, 1,-1}, {1,0}},
+	{{ 1, 1, 1}, {0,0}},
+	{{ 1,-1, 1}, {0,1}},
+	{{ 1,-1,-1}, {1,1}},
+};
+
+static unsigned short s_cubeIbo[] =
+{
+	// Top Face
+	0, 1, 2,
+	2, 3, 0,
+
+	// Bottom Face
+	4, 5, 6,
+	6, 7, 4,
+
+	// Front face
+	8,   9, 10,
+	10, 11,  8,
+
+	// Back face
+	12, 13, 14,
+	14, 15, 12,
+	
+	// Left face
+	16, 17, 18,
+	18, 19, 16,
+
+	// Right face
+	20, 21, 22,
+	22, 23, 20,
 };
 
 DEFINE_SINGLETON(PrimitiveDraw);
@@ -77,20 +111,32 @@ void CPrimitiveDraw::DrawCube(CTransform& transform, shader_t shader)
 	Renderer().SetMatrix(MatrixMode::MODEL, transform.Matrix());
 	Renderer().BindShader(shader);
 
+
+	glBindVertexArray(m_cubeVAO);
+
 	// 1rst attribute buffer : vertices
-	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, m_cubeVBO);
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(
 		0,                  // attribute. No particular reason for 0, but must match the layout in the shader.
 		3,                  // size
 		GL_FLOAT,           // type
 		GL_FALSE,           // normalized?
-		0,                  // stride
+		sizeof(vertex_t),   // stride
 		(void*)0            // array buffer offset
 	);
-
+	glVertexAttribPointer(
+		1,                  // attribute. No particular reason for 0, but must match the layout in the shader.
+		2,                  // size
+		GL_FLOAT,           // type
+		GL_FALSE,           // normalized?
+		sizeof(vertex_t),   // stride
+		(void*)offsetof(vertex_t, uv)            // array buffer offset
+	);
+	 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_cubeIBO);
-	glDrawElements(GL_TRIANGLES, sizeof(s_cubeIbo) / (sizeof(int)), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, sizeof(s_cubeIbo) / (sizeof(short)), GL_UNSIGNED_SHORT, 0);
 
 	glDisableVertexAttribArray(0);
 

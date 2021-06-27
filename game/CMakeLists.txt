@@ -26,13 +26,23 @@ set( SOURCES
 
 	basesystem.h
 
+	materials.cpp
+	materials.h
 
+	textures.cpp
+	textures.h
+
+	imguibackend.cpp
+	imguibackend.h
 )
 
 set( SHADERS
 	cube.vs
 	cube.fs
 )
+
+
+
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 add_executable( game ${SOURCES} ${SHADERS} )
@@ -47,3 +57,9 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT g
 file(COPY ${SHADERS} DESTINATION ${CMAKE_BINARY_DIR})
 
 
+foreach(SHADER ${SHADERS})
+    get_filename_component(SHADER_PATH "${SHADER}" ABSOLUTE)
+
+    add_custom_command(TARGET game PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy "${SHADER_PATH}" "${CMAKE_BINARY_DIR}/${SHADER}")
+endforeach()
