@@ -40,6 +40,7 @@ CBaseEntity* CEntityManager::CreateEntity(const char* name)
 
 	CBaseEntity* ent = m_factories[name]->CreateEntity();
 	m_ents.push_back(ent);
+	ent->Spawn();
 	return ent;
 }
 
@@ -52,14 +53,20 @@ void CEntityManager::Update()
 		m_ents.erase(target);
 	}
 	m_removeNextFrame.clear();
-	for (auto e : m_ents)
-		e->Update();
+	
+	// Fix it so we don't update fresh ents this frame.
+	int len = m_ents.size();
+	for (int i = 0; i < len; i++)
+		m_ents[i]->Update();
 }
 
 void CEntityManager::Render()
 {
-	for (auto e : m_ents)
-		e->Render();
+
+	// Fix it so we don't render fresh ents this frame.
+	int len = m_ents.size();
+	for (int i = 0; i < len; i++)
+		m_ents[i]->Render();
 
 }
 

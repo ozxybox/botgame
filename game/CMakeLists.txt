@@ -12,8 +12,8 @@ set( SOURCES
 	transform.cpp
 	transform.h
 	
-	shadermanager.cpp
-	shadermanager.h
+	shaders.cpp
+	shaders.h
 
 	log.cpp
 	log.h
@@ -34,11 +34,34 @@ set( SOURCES
 
 	imguibackend.cpp
 	imguibackend.h
+
+	basebillboardent.cpp
+	basebillboardent.h
+	
+	camera.cpp
+	camera.h
+
+	player.cpp
+	player.h
+
+	utils.cpp
+	utils.h
+
+	cell.cpp
+	cell.h
+
+	world.cpp
+	world.h
+	
+	physics.cpp
+	physics.h
 )
 
 set( SHADERS
 	cube.vs
 	cube.fs
+	tileset.vs
+	tileset.fs
 )
 
 

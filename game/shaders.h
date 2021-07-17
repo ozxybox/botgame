@@ -6,14 +6,14 @@
 typedef unsigned int shader_t;
 
 
-DECLARE_SINGLETON_ACCESSOR(ShaderManager);
-class CShaderManager : public IBaseSingleton<CShaderManager>
+DECLARE_SINGLETON_ACCESSOR(Shaders);
+class CShaders : public IBaseSingleton<CShaders>
 {
-	DECLARE_SINGLETON(ShaderManager)
+	DECLARE_SINGLETON(Shaders)
 
 public:
-	CShaderManager();
-	~CShaderManager();
+	CShaders();
+	~CShaders();
 
 	// Gets a program by loading vertex and fragment shader files
 	shader_t GetProgram(const char* vertex, const char* fragment);

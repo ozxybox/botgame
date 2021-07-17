@@ -1,17 +1,17 @@
-#include "shadermanager.h"
+#include "shaders.h"
 #include <glad/glad.h>
 #include <stdio.h>
 #include <cstdlib>
 #include "log.h"
 #include <renderer.h>
 
-DEFINE_SINGLETON(ShaderManager);
+DEFINE_SINGLETON(Shaders);
 
-CShaderManager::CShaderManager()
+CShaders::CShaders()
 {
 }
 
-CShaderManager::~CShaderManager()
+CShaders::~CShaders()
 {
 	for(auto p : m_programs)
 		glDeleteProgram(p.second);
@@ -20,7 +20,7 @@ CShaderManager::~CShaderManager()
 		glDeleteShader(p.second);
 }
 
-shader_t CShaderManager::GetProgram(const char* vertex, const char* fragment)
+shader_t CShaders::GetProgram(const char* vertex, const char* fragment)
 {
 	std::string programName = std::string(vertex) + std::string(fragment);
 	if (m_programs.contains(programName))
@@ -38,7 +38,7 @@ shader_t CShaderManager::GetProgram(const char* vertex, const char* fragment)
 	return program;
 }
 
-shader_t CShaderManager::CreateProgramFromText(const char* vertex, const char* fragment)
+shader_t CShaders::CreateProgramFromText(const char* vertex, const char* fragment)
 {
 	// Make up fake names
 	static int s_fromTextCount = 0;
@@ -64,7 +64,7 @@ shader_t CShaderManager::CreateProgramFromText(const char* vertex, const char* f
 	return program;
 }
 
-shader_t CShaderManager::GetShader(const char* path, unsigned int type)
+shader_t CShaders::GetShader(const char* path, unsigned int type)
 {
 	std::string spath = path;
 	shader_t shader;
@@ -76,7 +76,7 @@ shader_t CShaderManager::GetShader(const char* path, unsigned int type)
 	return shader;
 }
 
-shader_t CShaderManager::CreateShaderFromText(const char* name, const char* str, unsigned int type)
+shader_t CShaders::CreateShaderFromText(const char* name, const char* str, unsigned int type)
 {
 	GLuint shaderID = glCreateShader(type);
 	
@@ -105,7 +105,7 @@ shader_t CShaderManager::CreateShaderFromText(const char* name, const char* str,
 	return shaderID;
 }
 
-shader_t CShaderManager::LoadShaderFromFile(const char* path, unsigned int type)
+shader_t CShaders::LoadShaderFromFile(const char* path, unsigned int type)
 {
 	// Read File
 	FILE* f = fopen(path, "r");

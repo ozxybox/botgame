@@ -5,10 +5,11 @@
 #include "imgui.h"
 #include <stdio.h>
 
-#include <glad/glad.h>          // Needs to be initialized with gladLoadGL() in user's code.
-#include <textures.h>
-#include <shadermanager.h>
-#include <renderer.h>
+#include "textures.h"
+#include "shaders.h"
+#include "renderer.h"
+
+#include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 
@@ -133,7 +134,7 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data)
 
                     // Bind texture, Draw
                     Renderer().BindShader(g_ShaderHandle);
-                    Renderer().BindTexture((shader_t)(intptr_t)pcmd->GetTexID());
+                    Renderer().BindTexture((texture_t)(intptr_t)pcmd->GetTexID());
                     glDrawElementsBaseVertex(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void*)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)), (GLint)pcmd->VtxOffset);
                 }
             }
@@ -178,7 +179,7 @@ bool ImGui_ImplOpenGL3_CreateDeviceObjects()
         "}\n";
 
    
-    g_ShaderHandle = ShaderManager().CreateProgramFromText(vertex_shader, fragment_shader);
+    g_ShaderHandle = Shaders().CreateProgramFromText(vertex_shader, fragment_shader);
 
 
     // Create buffers
@@ -191,7 +192,7 @@ bool ImGui_ImplOpenGL3_CreateDeviceObjects()
     int width, height;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bit (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
 
-    g_FontTexture = Textures().TextureFromPixels(TextureFormat::RGBA32, width, height, pixels);
+    g_FontTexture = Textures().NamedTextureFromPixels("__|DearImGuiFont", TextureFormat::RGBA32, width, height, pixels);
 
     // Store our identifier
     io.Fonts->SetTexID((ImTextureID)(intptr_t)g_FontTexture);

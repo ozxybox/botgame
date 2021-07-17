@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include "textures.h"
 
 #include <SDL.h>
 #include <log.h>
@@ -62,6 +63,9 @@ CRenderer::CRenderer()
 	// Accept fragment if it closer to the camera than the former one
 	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
+	
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 CRenderer::~CRenderer()
@@ -70,7 +74,7 @@ CRenderer::~CRenderer()
 
 void CRenderer::ClearFrame(glm::vec3 color)
 {
-	glClearColor(color.r, color.g, color.b, 1.f);
+	glClearColor(color.r, color.g, color.b, 0.f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -115,7 +119,11 @@ void CRenderer::SetMatrix(MatrixMode mode, glm::mat4x4 mat)
 
 void CRenderer::BindShader(shader_t shader)
 {
-	glUseProgram(shader);
+	if (m_currentShader != shader)
+	{
+		glUseProgram(shader);
+		m_currentShader = shader;
+	}
 
 	// Send over the uniforms
 	glm::mat4x4 mvp = m_projection * m_view * m_model;
@@ -126,7 +134,7 @@ void CRenderer::BindShader(shader_t shader)
 
 void CRenderer::BindTexture(texture_t texture)
 {
-	glBindTexture(GL_TEXTURE_2D, texture);
+	glBindTexture(GL_TEXTURE_2D, Textures().RenderHandle(texture));
 }
 
 void CRenderer::GetWindowSize(int& w, int& h)
@@ -140,4 +148,43 @@ void CRenderer::GetWindowSize(int& w, int& h)
 	{
 		SDL_GetWindowSize((SDL_Window*)m_window, &w, &h);
 	}
+}
+
+void CRenderer::DrawObject(int vao, int vbo, int ibo, int elementCount)
+{
+
+	glBindVertexArray(vao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(
+		0,                             // position 0
+		3,                             // three floats
+		GL_FLOAT,                      // elements are floats
+		GL_FALSE,                      //
+		sizeof(vertex_t),              // stride
+		(void*)offsetof(vertex_t, pos) // position within stride
+	);
+	glVertexAttribPointer(
+		1,                            // position 1
+		2,                            // two floats
+		GL_FLOAT,                     // elements are floats
+		GL_FALSE,                     //
+		sizeof(vertex_t),             // stride
+		(void*)offsetof(vertex_t, uv) // position within stride
+	);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glDrawElements(GL_TRIANGLES, elementCount, GL_UNSIGNED_SHORT, 0);
+
+	glDisableVertexAttribArray(0);
+}
+
+void CRenderer::BindTile(tileset_t tileset, int x, int y)
+{ 
+	glm::vec4 rect = Textures().TileRect(tileset, x, y);
+	GLuint subrectUniform = glGetUniformLocation(m_currentShader, "u_subrect");
+	glUniform4fv(subrectUniform, 1, &rect.x);
+	BindTexture(Textures().TilesetTexture(tileset));
 }

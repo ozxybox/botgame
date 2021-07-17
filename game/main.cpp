@@ -9,7 +9,7 @@
 #include <time.h>
 #include "transform.h"
 #include "log.h"
-#include <shadermanager.h>
+#include "shaders.h"
 #include <renderer.h>
 #include <primitivedraw.h>
 #include "baseentity.h"
@@ -17,64 +17,11 @@
 #include <textures.h>
 #include <imgui/imgui.h>
 #include <imguibackend.h>
-
-
-enum
-{
-	IN_NONE     = 0x0,
-	IN_FORWARD  = 0x1,
-	IN_BACKWARD = 0x2,
-	IN_LEFT     = 0x4,
-	IN_RIGHT    = 0x8,
-};
-
-static unsigned int s_in = 0;
-static double s_deltaTime = 0;
-static float s_mousedx = 0;
-static float s_mousedy = 0;
-
-
-void Directions(glm::vec3 angles, glm::vec3* forward, glm::vec3* right, glm::vec3* up)
-{
-	const float pitch = angles.x;
-	const float yaw = angles.y;
-	const float roll = -angles.z;
-
-	glm::vec3 _forward;
-	_forward.x = sin(yaw) * cos(pitch);
-	_forward.y = -sin(pitch);
-	_forward.z = cos(yaw) * cos(pitch);
-	_forward = glm::normalize(_forward);
-
-	if (forward)
-		*forward = _forward;
-
-
-	glm::vec3 _right;
-	_right.x = cos(roll) * cos(yaw);
-	_right.y = sin(roll);
-	_right.z = -cos(roll) * sin(yaw);
-	_right = glm::normalize(_right);
-
-
-	if (right)
-		*right = _right;
-
-	if (up)
-		*up = -glm::normalize(glm::cross(_right, _forward));
-	/*
-		if (up)
-		{
-			glm::vec3 _up;
-			_up.x = cos(-(roll + yaw)) * sin(pitch);
-			_up.y = cos(-roll) * cos(pitch);
-			_up.z = sin(-roll) * cos(yaw) * ((sin(pitch) + 1)/2);
-			_up = glm::normalize(_up);
-
-			*up = _up;
-		}
-		*/
-}
+#include "utils.h"
+#include <camera.h>
+#include "basebillboardent.h"
+#include <world.h>
+#include "physics.h"
 
 enum class RobotAction
 {
@@ -88,12 +35,20 @@ float lerp(float a, float b, float percent)
 {
 	return a + (b - a) * percent;
 }
-class CRobot : public CBaseEntity
+class CRobot : public CBaseBillboardEnt
 {
 public:
-	CRobot(const char* classname) : CBaseEntity(classname) 
+	CRobot(const char* classname) : CBaseBillboardEnt(classname)
 	{
 		int i = 0;
+		m_acts[i++] = RobotAction::FORWARD;
+		m_acts[i++] = RobotAction::TURN_LEFT;
+		m_acts[i++] = RobotAction::TURN_LEFT;
+		m_acts[i++] = RobotAction::FORWARD;
+		m_acts[i++] = RobotAction::TURN_RIGHT;
+		m_acts[i++] = RobotAction::END;
+
+		/*
 		m_acts[i++] = RobotAction::TURN_LEFT;
 		m_acts[i++] = RobotAction::FORWARD;
 		m_acts[i++] = RobotAction::TURN_RIGHT;
@@ -102,23 +57,58 @@ public:
 		m_acts[i++] = RobotAction::TURN_RIGHT;
 		m_acts[i++] = RobotAction::FORWARD;
 		m_acts[i++] = RobotAction::END;
+		*/
 		m_pos = 0;
 		m_actionStartTime = SDL_GetTicks() / 1000.0f;
 		m_startYaw = 0;
 		m_startPos = GetLocalOrigin();
-		SetLocalScale(0.5, 1, 0.5);
+		//SetLocalScale(0.5, 1, 0.5);
+		//SetLocalAngles(0, 3.14, 0);
+		SetTileset("player.png", 32, 32);
 	}
 	int m_pos; 
 	RobotAction m_acts[32];
 	float m_actionStartTime;
 	float m_startYaw;
 	glm::vec3 m_startPos;
-	virtual void Render()
-	{
-		PrimitiveDraw().DrawCube(*this);
-	}
+
 	virtual void Update()
 	{
+
+		{
+			float yaw = GetLocalAngles().y;
+			float x = sin(yaw);
+			float y = -cos(yaw);
+		
+			if (x > 0.5f)
+			{
+				if(y > 0.5f)
+					SetTilePos(1, 0);
+				else if (y < -0.5f)
+					SetTilePos(3, 0);
+				else
+					SetTilePos(2, 0);
+			}
+			else if (x < -0.5f)
+			{
+				if (y > 0.5f)
+					SetTilePos(7, 0);
+				else if (y < -0.5f)
+					SetTilePos(5, 0);
+				else
+					SetTilePos(6, 0);
+			}
+			else
+			{
+				if (y < -0.5f)
+					SetTilePos(4, 0);
+				else if(y > 0.5f)
+					SetTilePos(0, 0);
+			}
+
+		}
+
+
 		if (ImGui::Begin("Robot"))
 		{
 			ImGui::BeginTable("program", 1);
@@ -178,75 +168,65 @@ public:
 };
 DECLARE_ENT(CRobot, robot);
 
-class CPlayer : public CBaseEntity
+
+
+class CBarrel : public CBaseBillboardEnt
 {
 public:
-	CPlayer(const char* classname) : CBaseEntity(classname) {}
-
-	virtual void Render()
+	CBarrel(const char* classname) : CBaseBillboardEnt(classname)
 	{
-		PrimitiveDraw().DrawCube(*this);
-
-	}
-	virtual void Update()
-	{
-		glm::vec3 ang = GetAbsAngles();
-		glm::vec3 pos = GetAbsOrigin();
-//#define FPS_MODE 1
-#ifdef FPS_MODE
-		glm::vec3 angleDelta = glm::vec3(s_mousedy, -s_mousedx, 0);
-		angleDelta *= 2 / 1000.0f;
-		ang += angleDelta;
-		SetAbsAngles(ang);
-#endif
-
-		glm::vec3 forward, right;
-		Directions({ 0,ang.y,0 }, &forward, &right, nullptr);
-
-		glm::vec3 delta = {0,0,0};
-		delta -= right * (s_in & IN_RIGHT ? 1.0f : 0.0f);
-		delta += right * (s_in & IN_LEFT ? 1.0f : 0.0f);
-		delta += forward * (s_in & IN_FORWARD ? 1.0f : 0.0f);
-		delta -= forward * (s_in & IN_BACKWARD ? 1.0f : 0.0f);
-		delta *= s_deltaTime * 4;
-
-		pos += delta;
-		SetAbsOrigin(pos);
-
+		SetTileset("barrel.png", 32, 32);
 	}
 
 };
-DECLARE_ENT(CPlayer, player);
+DECLARE_ENT(CBarrel, barrel);
 
 
-class CGround : public CBaseEntity
+
+class CBox : public CBaseEntity , public CPhysicsObject
 {
 public:
-	CGround(const char* classname) : CBaseEntity(classname)
+	CBox(const char* classname) : CBaseEntity(classname), CPhysicsObject(*(CTransform*)this)
 	{
-		SetLocalScale(10, 0.01f, 10);
+		m_lastUpdate = g_globals.curTime;
+	}
+	virtual void Spawn()
+	{
+		SetVelocity({ 18,0,8 });
+		SetResistance({ 3, 0, 3 });
+		SetAcceleration({ -4,0,0 });
+	}
+	double m_lastUpdate;
+	virtual void Update()
+	{
+
+		if (g_globals.curTime > m_lastUpdate + 0.01f)
+		{
+			Simulate(g_globals.curTime - m_lastUpdate);
+			m_lastUpdate = g_globals.curTime;
+		}
 	}
 
 	virtual void Render()
 	{
-		PrimitiveDraw().DrawCube(*this);
-
-	}
-	virtual void Update()
-	{
+		CTransform t = *this;
+		t.SetLocalOrigin(t.GetLocalOrigin() + glm::vec3{0, 1, 0});
+		Renderer().BindTexture(Textures().ErrorTexture());
+		PrimitiveDraw().DrawCube(t);
 	}
 
 };
-DECLARE_ENT(CGround, ground);
+DECLARE_ENT(CBox, box);
+
 
 int main()
 {
-	
 
-	CShaderManager sm;
+	CShaders sm;
 	CRenderer rm;
 	CPrimitiveDraw pd;
 	CTextures tx;
+	CCamera cam;
 
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
@@ -254,20 +234,28 @@ int main()
 	
 	ImGuiInit();
 
-
+	g_globals.dt = 0.1f;
+	g_globals.curTime = SDL_GetPerformanceCounter() / (double)SDL_GetPerformanceFrequency();;
 	Log::Msg("ready\n");
 	
-	auto img = Textures().LoadTexture("test.png");
 
 	//SDL_SetRelativeMouseMode(SDL_TRUE);
+	EntManager().CreateEntity("world");
 
 	CBaseEntity* ent = EntManager().CreateEntity("robot");
-	ent->SetAbsOrigin(0, 1, 0);
+	ent->SetAbsOrigin(0, 0, 0);
+
+	ent = EntManager().CreateEntity("barrel");
+	ent->SetAbsOrigin(4, 0, 0);
+
+	ent = EntManager().CreateEntity("box");
+	ent->SetAbsOrigin(-4, 0, 0);
+	World().AddTarget(ent, 5);
 
 	CBaseEntity* player = EntManager().CreateEntity("player");
-	player->SetAbsOrigin(0, 1, -4);
-
-	EntManager().CreateEntity("ground");
+	player->SetAbsOrigin(0, 0, -4);
+	Camera().Setup(player, {0,10,14});
+	World().AddTarget(player, 5);
 
 	bool run = true;
 	SDL_Event e;
@@ -278,14 +266,14 @@ int main()
 		// Lock at 60
 		uint32_t wt = 1000.0f / 60.0f;//// std::max(1000.0f / 60.0f - (s_deltaTime * 1000.0f - 1000.0f / 60.0f), 1.0);
 		//printf("%d\n", wt);
-		//SDL_Delay(wt);
+		SDL_Delay(wt);
 
 		// Higher than 1 ms resolution clock
 		double curTime = SDL_GetPerformanceCounter() / (double)SDL_GetPerformanceFrequency();
-		s_deltaTime = (curTime - lastTime);
+		g_globals.dt = curTime - lastTime;
+		g_globals.curTime = curTime;
 		lastTime = curTime;
 
-		
 
 		// Dear ImGui new frame
 		int w, h;
@@ -294,11 +282,11 @@ int main()
 		Renderer().GetWindowSize(w, h);
 		io.DisplaySize = ImVec2((float)w, (float)h);
 		io.DisplayFramebufferScale = ImVec2(1, 1);
-		io.DeltaTime = s_deltaTime == 0 ? 0.01f : s_deltaTime;
+		io.DeltaTime = g_globals.dt == 0 ? 0.01f : g_globals.dt;
 		
 
-		s_mousedx = 0;
-		s_mousedy = 0;
+		g_globals.mousedx = 0;
+		g_globals.mousedy = 0;
 		while (SDL_PollEvent(&e))
 		{
 			switch (e.type)
@@ -309,10 +297,10 @@ int main()
 			case SDL_KEYDOWN:
 				switch (e.key.keysym.sym)
 				{
-				case SDLK_a: s_in |= IN_LEFT;     break;
-				case SDLK_d: s_in |= IN_RIGHT;    break;
-				case SDLK_w: s_in |= IN_FORWARD;  break;
-				case SDLK_s: s_in |= IN_BACKWARD; break;
+				case SDLK_a: g_globals.input |= IN_LEFT;     break;
+				case SDLK_d: g_globals.input |= IN_RIGHT;    break;
+				case SDLK_w: g_globals.input |= IN_FORWARD;  break;
+				case SDLK_s: g_globals.input |= IN_BACKWARD; break;
 
 				case SDLK_ESCAPE: run = false;    break;
 				}
@@ -320,15 +308,15 @@ int main()
 			case SDL_KEYUP:
 				switch (e.key.keysym.sym)
 				{
-				case SDLK_a: s_in &= ~IN_LEFT;     break;
-				case SDLK_d: s_in &= ~IN_RIGHT;    break;
-				case SDLK_w: s_in &= ~IN_FORWARD;  break;
-				case SDLK_s: s_in &= ~IN_BACKWARD; break;
+				case SDLK_a: g_globals.input &= ~IN_LEFT;     break;
+				case SDLK_d: g_globals.input &= ~IN_RIGHT;    break;
+				case SDLK_w: g_globals.input &= ~IN_FORWARD;  break;
+				case SDLK_s: g_globals.input &= ~IN_BACKWARD; break;
 				}
 				break;
 			case SDL_MOUSEMOTION:
-				s_mousedx = e.motion.xrel;
-				s_mousedy = e.motion.yrel;
+				g_globals.mousedx = e.motion.xrel;
+				g_globals.mousedy = e.motion.yrel;
 				break;
 			}
 		}
@@ -342,13 +330,13 @@ int main()
 
 		ImGui::NewFrame();
 
-		if (ImGui::Begin("Time"))
+
+		if (ImGui::Begin("Player"))
 		{
-			ImGui::InputDouble("curTime", &curTime);
-			ImGui::InputDouble("s_deltaTime", &s_deltaTime);
+			glm::vec3 pos = player->GetAbsOrigin();
+			ImGui::InputFloat3("pos", &pos.x);
 		}
 		ImGui::End();
-
 		// Reset everything 
 
 		// Enable depth test
@@ -356,12 +344,17 @@ int main()
 		// Accept fragment if it closer to the camera than the former one
 		glDepthFunc(GL_LESS);
 		glEnable(GL_CULL_FACE);
-		glEnable(GL_STENCIL_TEST);
+		glEnable(GL_STENCIL_TEST); 
 		glDisable(GL_SCISSOR_TEST);
-		Renderer().SetPerspective(glm::radians(45.0f));
-		glm::vec3 pos = player->GetAbsOrigin();
-		glm::mat4x4 m = glm::lookAt(pos + glm::vec3{ 0.0f,16.0f,-14.0f }, pos, { 0,1,0 });
-		Renderer().SetMatrix(MatrixMode::VIEW, m);
+		glDisable(GL_ALPHA_TEST);
+
+		glEnable(GL_BLEND);
+
+		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+		glBlendEquation(GL_FUNC_ADD);
+		
+
+		Camera().Update();
 		
 
 		ImGui::ShowDemoWindow();
@@ -372,7 +365,6 @@ int main()
 		
 
 		Renderer().ClearFrame();
-		Renderer().BindTexture(img);
 		EntManager().Render();
 		//glViewport(0, 0, 800, 800);
 		ImGui::Render();

@@ -2,12 +2,6 @@
 #include <glad/include/glad/glad.h>
 #include <renderer.h>
 
-struct vertex_t
-{
-	glm::vec3 pos;
-	glm::vec2 uv;
-};
-
 static vertex_t s_cubeVbo[] =
 {
 	// Top face
@@ -75,11 +69,26 @@ static unsigned short s_cubeIbo[] =
 	22, 23, 20,
 };
 
+
+static vertex_t s_quadVbo[] =
+{
+	{{ 1, 0, 0}, {0,1}},
+	{{ 0, 0, 0}, {1,1}},
+	{{ 0, 1, 0}, {1,0}},
+	{{ 1, 1, 0}, {0,0}},
+};
+
+static unsigned short s_quadIbo[] =
+{
+	0, 1, 2,
+	2, 3, 0
+};
+
 DEFINE_SINGLETON(PrimitiveDraw);
 
 CPrimitiveDraw::CPrimitiveDraw()
 {
-	m_cubeShader = ShaderManager().GetProgram("cube.vs", "cube.fs");
+	m_cubeShader = Shaders().GetProgram("cube.vs", "cube.fs");
 
 	glGenVertexArrays(1, &m_cubeVAO);
 	glBindVertexArray(m_cubeVAO);
@@ -91,6 +100,18 @@ CPrimitiveDraw::CPrimitiveDraw()
 	glGenBuffers(1, &m_cubeIBO);
 	glBindBuffer(GL_ARRAY_BUFFER, m_cubeIBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(s_cubeIbo), s_cubeIbo, GL_STATIC_DRAW);
+
+
+	glGenVertexArrays(1, &m_quadVAO);
+	glBindVertexArray(m_quadVAO);
+
+	glGenBuffers(1, &m_quadVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, m_quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(s_quadVbo), s_quadVbo, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &m_quadIBO);
+	glBindBuffer(GL_ARRAY_BUFFER, m_quadIBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(s_quadIbo), s_quadIbo, GL_STATIC_DRAW);
 }
 
 CPrimitiveDraw::~CPrimitiveDraw()
@@ -99,6 +120,11 @@ CPrimitiveDraw::~CPrimitiveDraw()
 	glDeleteBuffers(1, &m_cubeVBO);
 	glDeleteBuffers(1, &m_cubeIBO);
 	glDeleteVertexArrays(1, &m_cubeVAO);
+
+
+	glDeleteBuffers(1, &m_quadVBO);
+	glDeleteBuffers(1, &m_quadIBO);
+	glDeleteVertexArrays(1, &m_quadVAO);
 }
 
 void CPrimitiveDraw::DrawCube(CTransform& transform)
@@ -111,33 +137,20 @@ void CPrimitiveDraw::DrawCube(CTransform& transform, shader_t shader)
 	Renderer().SetMatrix(MatrixMode::MODEL, transform.Matrix());
 	Renderer().BindShader(shader);
 
+	Renderer().DrawObject(m_cubeVAO, m_cubeVBO, m_cubeIBO, sizeof(s_cubeIbo) / sizeof(short));
 
-	glBindVertexArray(m_cubeVAO);
+}
 
-	// 1rst attribute buffer : vertices
-	glBindBuffer(GL_ARRAY_BUFFER, m_cubeVBO);
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(
-		0,                  // attribute. No particular reason for 0, but must match the layout in the shader.
-		3,                  // size
-		GL_FLOAT,           // type
-		GL_FALSE,           // normalized?
-		sizeof(vertex_t),   // stride
-		(void*)0            // array buffer offset
-	);
-	glVertexAttribPointer(
-		1,                  // attribute. No particular reason for 0, but must match the layout in the shader.
-		2,                  // size
-		GL_FLOAT,           // type
-		GL_FALSE,           // normalized?
-		sizeof(vertex_t),   // stride
-		(void*)offsetof(vertex_t, uv)            // array buffer offset
-	);
-	 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_cubeIBO);
-	glDrawElements(GL_TRIANGLES, sizeof(s_cubeIbo) / (sizeof(short)), GL_UNSIGNED_SHORT, 0);
 
-	glDisableVertexAttribArray(0);
 
+void CPrimitiveDraw::DrawQuad(CTransform& transform, shader_t shader)
+{
+	Renderer().SetMatrix(MatrixMode::MODEL, transform.Matrix());
+	Renderer().BindShader(shader);
+
+	Renderer().DrawObject(m_quadVAO, m_quadVBO, m_quadIBO, sizeof(s_quadIbo) / sizeof(short));
+}
+void CPrimitiveDraw::DrawQuad(CTransform& transform)
+{
+	DrawQuad(transform, m_cubeShader);
 }

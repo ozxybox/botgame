@@ -9,7 +9,7 @@ class CBaseEntity : public CTransform
 public:
 	CBaseEntity(const char* classname);
 	
-	void Spawn();
+	virtual void Spawn();
 
 	// Gets called on removal. The ent will no longer exist next frame
 	virtual void Removed();
