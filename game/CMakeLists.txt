@@ -73,7 +73,10 @@ target_include_directories( game PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries( game SDL2 glad glm lodepng imgui )
 set_target_properties( game PROPERTIES
 	VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    CXX_STANDARD 20
 )
+
+
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT game)
 

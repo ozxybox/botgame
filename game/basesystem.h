@@ -12,7 +12,8 @@
 	C##classname& classname();
 
 #define DEFINE_SINGLETON(classname) \
-	C##classname* IBaseSingleton<C##classname>::s_singleton = nullptr; \
+    template<>                      \
+    C##classname* IBaseSingleton<C##classname>::s_singleton = nullptr; \
 	C##classname& classname() { return *(C##classname*)C##classname::s_singleton; } 
 
 /*

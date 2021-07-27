@@ -1,4 +1,5 @@
 #include "baseentity.h"
+#include <cstring>
 
 CBaseEntity::CBaseEntity(const char* classname)
 {

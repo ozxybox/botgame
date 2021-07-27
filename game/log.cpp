@@ -46,7 +46,8 @@ void SetConsoleTextForegroundColor(ConsoleColor color)
 
 // Cheesy move to strip off the path from the file name 
 // Note: This does require log.cpp to exist at the base of the file tree!
-consteval int findInFILE(char s)
+//consteval
+constexpr int findInFILE(char s)
 {
     constexpr const char path[] = __FILE__;
     constexpr const int len = sizeof(path);
@@ -56,9 +57,10 @@ consteval int findInFILE(char s)
     return -1;
 }
 
-consteval int baseFilePathLength()
+//consteval
+constexpr int baseFilePathLength()
 {
-    int slash;
+    int 
 #ifdef _WIN32
     slash = findInFILE('\\');
     if (slash < 0)
@@ -104,7 +106,6 @@ bool Log::Assert(bool condition, const char* expression, int line, const char* f
             break;
         }
 #else
-#error UNSUPPORTED_PLATFORM
 #endif
        
     }

@@ -1,6 +1,6 @@
 #pragma once
 #include "basesystem.h"
-#include "shadermanager.h"
+#include "shaders.h"
 #include "textures.h"
 
 struct material_t
